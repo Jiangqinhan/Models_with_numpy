@@ -36,7 +36,7 @@ class Model:
     def __init__(self,optimizer):
         self._optimizer=optimizer
 
-    def froward(self,X):
+    def forward(self,X):
         raise NotImplementedError()
 
     def backward(self,prev_grads):
@@ -68,7 +68,7 @@ class BaseEstimator:
     def train_batch(self,features,labels):
         '''
         在train_epoch中被调用
-        :param features: dict{ffieldname:SparseInput/DenseInput}
+        :param features: dict{fieldname:SparseInput/DenseInput}
         :param labels: array
         :return: ndarray of predicted probability in this batch
         '''

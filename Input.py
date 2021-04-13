@@ -34,6 +34,7 @@ class SparseInput:
         self.feature_ids=feature_ids
         self.feature_values=feature_values
         self.n_total_examples = n_total_examples
+        self.__nnz_idx=0
 
     def add(self, example_idx, feat_id, feat_val):
         '''
@@ -56,6 +57,45 @@ class SparseInput:
         print('example indices',self.example_indices)
         print('feature id',self.feature_ids)
         print('feature values',self.feature_values)
+
+    def __move_to_next_example(self,nnz_idx):
+        '''
+            返回当前样本的所有feature id和feature value
+            并把nnz_index移动到下一个样本的起始位置
+        '''
+        if nnz_idx>len(self.example_indices):
+            return None
+        end=nnz_idx+1
+        while end<len(self.example_indices) and self.example_indices[end]==self.example_indices[nnz_idx]:
+            end+=1
+        current_feat_ids = self.feature_ids[nnz_idx:end]
+        current_feat_vals = self.feature_values[nnz_idx:end]
+
+        return end, current_feat_ids, current_feat_vals
+
+
+    def get_example_in_order(self,example_idx):
+        '''
+
+        :param example_id:
+        :return: example_id的非0feat_id 和feat_val
+        '''
+        if self.__nnz_idx >= len(self.example_indices):
+            return [], []
+
+        elif self.example_indices[self.__nnz_idx] == example_idx:
+            self.__nnz_idx, feat_ids, feat_vals = self.__move_to_next_example(self.__nnz_idx)
+            return feat_ids, feat_vals
+
+        elif self.example_indices[self.__nnz_idx] > example_idx:
+            # 等待调用者下次传入更大的example_idx
+            return [], []
+
+        else:
+            # 如果当前example_index并不是调用者需要的example_idx
+            # 则一定是比外界需要用example_idx大，等待调用者传入更大的example_idx
+            # 如果比比外界需要用example_idx小，说明调用方式不对
+            raise ValueError("incorrect invocation")
 
 
 class  DenseInputCombineLayer(Layer):
@@ -83,3 +123,4 @@ class  DenseInputCombineLayer(Layer):
     @property
     def output_dim(self):
         return sum(in_dim for _,in_dim in self._field_sizes)
+
